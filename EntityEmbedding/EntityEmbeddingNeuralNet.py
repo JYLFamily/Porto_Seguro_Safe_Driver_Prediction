@@ -1,6 +1,7 @@
 # coding:utf-8
 
 import os
+import gc
 import yaml
 import numpy as np
 import pandas as pd
@@ -60,6 +61,7 @@ class EntityEmbeddingNeuralNet(object):
         self.__train_feature, self.__train_label = self.__train.iloc[:, 2:].copy(), self.__train.iloc[:, 1].copy()
         self.__test_feature, self.__test_index = self.__test.iloc[:, 1:].copy(), self.__test.iloc[:, [0]].copy()
         del self.__train, self.__test
+        gc.collect()
 
         # delete ps_calc feature
         self.__train_feature = \
@@ -133,6 +135,7 @@ class EntityEmbeddingNeuralNet(object):
 
         self.__train_deep_feature, self.__test_deep_feature = self.__train_feature, self.__test_feature
         del self.__train_feature, self.__test_feature
+        gc.collect()
 
     def model_fit_predict(self):
         # blending
