@@ -8,8 +8,9 @@ import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.base import TransformerMixin
 from category_encoders import TargetEncoder
-from sklearn.ensemble import GradientBoostingClassifier
-from EntityEmbedding.Util import optimize_gbm
+from category_encoders import BinaryEncoder
+from sklearn.ensemble import RandomForestClassifier
+from EntityEmbedding.Util import optimize_rf
 np.random.seed(7)
 pd.set_option("display.max_row", None)
 pd.set_option("display.max_columns", None)
@@ -32,19 +33,10 @@ class EntityEmbeddingTree(BaseEstimator, TransformerMixin):
         X[self.__categorical_columns] = X[self.__categorical_columns].fillna("missing").astype(str)
         X[self.__categorical_columns] = self.__target_encoder.fit_transform(X[self.__categorical_columns], y)
 
-        # self.__max_target, self.__max_param = optimize_gbm(X, y)
-        # self.__clf = GradientBoostingClassifier(
-        #     min_samples_leaf=max(min(self.__max_param["min_samples_leaf"], 1.0), 0),
-        #     subsample=max(min(self.__max_param["subsample"], 1.0), 0),
-        #     learning_rate=max(min(self.__max_param["learning_rate"], 1.0), 0),
-        #     n_estimators=max(int(round(self.__max_param["n_estimators"])), 1)
-        # )
-        self.__clf = GradientBoostingClassifier(
-            min_samples_leaf=max(min(0.05, 1.0), 0),
-            subsample=max(min(1.0, 1.0), 0),
-            max_features=max(min(1.0, 1.0), 0),
-            learning_rate=max(min(0.05, 1.0), 0),
-            n_estimators=max(int(round(490.6)), 1)
+        self.__max_target, self.__max_param = optimize_rf(X, y)
+        self.__clf = RandomForestClassifier(
+            min_samples_leaf=max(min(self.__max_param["min_samples_leaf"], 1.0), 0),
+            n_estimators=max(int(round(self.__max_param["n_estimators"])), 1)
         )
 
         self.__clf.fit(X, y)
@@ -60,7 +52,7 @@ class EntityEmbeddingTree(BaseEstimator, TransformerMixin):
         X[self.__categorical_columns] = self.__target_encoder.transform(X[self.__categorical_columns])
         gc.collect()
 
-        return self.__clf.apply(X).reshape(-1, self.__clf.n_estimators_)[:, :10]
+        return pd.DataFrame(self.__clf.apply(X)).astype(str)
 
     def fit_transform(self, X, y=None, **fit_params):
         self.fit(X=X, y=y)
@@ -87,6 +79,9 @@ if __name__ == "__main__":
 
     eet = EntityEmbeddingTree(numeric_columns=ncs, categorical_columns=ccs)
     eet.fit(X=train_feature, y=train_label)
-    print(eet.transform(X=train_feature).shape)
-    print(eet.transform(X=test_feature).shape)
+
+    encoder = BinaryEncoder()
+    print(encoder.fit_transform(eet.transform(X=train_feature)).shape)
+    print(encoder.transform(eet.transform(X=test_feature)).shape)
+
 
