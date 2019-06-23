@@ -9,11 +9,11 @@ import tensorflow as tf
 import keras.backend as k
 from tqdm import tqdm
 from tensorflow import set_random_seed
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from category_encoders import BinaryEncoder
 from keras.models import Model
 from keras.layers import Input, Embedding, Reshape, Concatenate, Dense
-from keras.initializers import lecun_normal, constant
+from keras.initializers import random_uniform, lecun_normal, constant
 from sklearn.model_selection import StratifiedKFold
 from scipy.special import expit, logit
 from keras.callbacks import TensorBoard, EarlyStopping
@@ -23,6 +23,17 @@ np.random.seed(7)
 set_random_seed(7)
 pd.set_option("display.max_row", None)
 pd.set_option("display.max_columns", None)
+
+
+def gini(y_true, y_pred):
+    num = len(y_true)
+    a_c = y_true[np.argsort(y_pred)].cumsum()
+
+    return (a_c.sum() / a_c[-1] - (num + 1) / 2.0) / num
+
+
+def gini_normalized(y_true, y_pred):
+    return gini(y_true, y_pred) / gini(y_true, y_true)
 
 
 def roc_auc_score(y_true, y_pred):
@@ -119,7 +130,7 @@ class EntityEmbeddingNeuralNet(object):
         self.__categorical_columns = self.__categorical_columns_item.keys()
 
         # deep feature numeric
-        scaler = MinMaxScaler()  # calc std, mean skip np.nan
+        scaler = StandardScaler()  # calc std, mean skip np.nan
         scaler.fit(self.__train_feature[self.__numeric_columns])
         self.__train_feature[self.__numeric_columns] = scaler.transform(self.__train_feature[self.__numeric_columns])
         self.__test_feature[self.__numeric_columns] = scaler.transform(self.__test_feature[self.__numeric_columns])
@@ -133,180 +144,176 @@ class EntityEmbeddingNeuralNet(object):
 
     def model_fit_predict(self):
         # blending
-        self.__folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=7)
-        self.__sub_preds = np.zeros(shape=(self.__test_wide_feature.shape[0], ))
-
-        for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
-                X=self.__train_wide_feature, y=self.__train_label)):
-
-            trn_wide_x = self.__train_wide_feature.iloc[trn_idx]
-            val_wide_x = self.__train_wide_feature.iloc[val_idx]
-
-            trn_deep_x, trn_y = self.__train_deep_feature.iloc[trn_idx], self.__train_label.iloc[trn_idx]
-            val_deep_x, val_y = self.__train_deep_feature.iloc[val_idx], self.__train_label.iloc[val_idx]
-
-            tra_feature_for_model = []
-            val_feature_for_model = []
-            test_feature_for_model = []
-
-            for col in self.__categorical_columns:
-                tra_feature_for_model.append(trn_deep_x[col].values)
-                val_feature_for_model.append(val_deep_x[col].values)
-                test_feature_for_model.append(self.__test_deep_feature[col].values)
-
-            tra_feature_for_model.append(trn_deep_x[self.__numeric_columns].values)
-            val_feature_for_model.append(val_deep_x[self.__numeric_columns].values)
-            test_feature_for_model.append(self.__test_deep_feature[self.__numeric_columns].values)
-
-            tra_feature_for_model.append(trn_wide_x.values)
-            val_feature_for_model.append(val_wide_x.values)
-            test_feature_for_model.append(self.__test_wide_feature.values)
-
-            del trn_wide_x, val_wide_x, trn_deep_x, val_deep_x
-
-            # net
-            input_layers = list()
-            embedding_layers = list()
-
-            # net categorical deep feature
-            for col, num in self.__categorical_columns_item.items():
-                input_deep_cat_layer = Input(shape=(1,), name=col + "_categorical_deep_input")
-                embedding_layer = Embedding(
-                    input_dim=num,
-                    output_dim=min(10, num // 2),
-                    input_length=1,
-                    name=col + "_deep_embedding")(input_deep_cat_layer)
-                embedding_layer = (
-                    Reshape(target_shape=(min(10, num // 2), ), name=col + "_deep_reshape")(embedding_layer))
-                input_layers.append(input_deep_cat_layer)
-                embedding_layers.append(embedding_layer)
-
-            # net numeric deep feature
-            input_deep_num_layer = Input(
-                shape=(len(self.__train_deep_feature.columns) - len(self.__categorical_columns_item),),
-                name="numeric_deep_input")
-            input_layers.append(input_deep_num_layer)
-
-            # net numeric wide feature
-            input_wide_layer = Input(shape=(self.__train_wide_feature.shape[1],), name="numeric_wide_input")
-            input_layers.append(input_wide_layer)
-
-            hidden_layer = Dense(
-                units=16,
-                kernel_initializer=lecun_normal(),
-                activation="selu")(
-                Concatenate()([Concatenate()(embedding_layers), input_deep_num_layer]))
-            hidden_layer = Dense(
-                units=8,
-                kernel_initializer=lecun_normal(),
-                activation="selu")(hidden_layer)
-            hidden_layer = Dense(
-                units=4,
-                kernel_initializer=lecun_normal(),
-                activation="selu")(hidden_layer)
-            hidden_layer = Concatenate()([hidden_layer, input_wide_layer])
-            output_layer = Dense(
-                units=1,
-                kernel_initializer=lecun_normal(),
-                bias_initializer=constant(self.__train_label.mean()),
-                activation="sigmoid", name="output_layer")(hidden_layer)
-
-            self.__net = Model(input_layers, output_layer)
-            self.__net.compile(loss="binary_crossentropy", optimizer=Adam(lr=0.0001), metrics=[roc_auc_score])
-
-            self.__net.fit(
-                tra_feature_for_model,
-                trn_y.values,
-                epochs=20,
-                batch_size=32,
-                verbose=2,
-                callbacks=[
-                    TensorBoard(),
-                    EarlyStopping(patience=5, restore_best_weights=True)
-                ],
-                validation_data=(val_feature_for_model, val_y.values)
-            )
-
-            pred_test = self.__net.predict(test_feature_for_model).reshape((-1, ))  # 2D shape -> 1D shape
-            self.__sub_preds += logit(pred_test) / self.__folds.n_splits
-
-        # train_feature_for_model = []
-        # test_feature_for_model = []
+        # self.__folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=7)
+        # self.__sub_preds = np.zeros(shape=(self.__test_wide_feature.shape[0], ))
         #
-        # for col in self.__categorical_columns:
-        #     train_feature_for_model.append(self.__train_deep_feature[col].values)
-        #     test_feature_for_model.append(self.__test_deep_feature[col].values)
+        # for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
+        #         X=self.__train_wide_feature, y=self.__train_label)):
         #
-        # train_feature_for_model.append(self.__train_deep_feature[self.__numeric_columns].values)
-        # test_feature_for_model.append(self.__test_deep_feature[self.__numeric_columns].values)
+        #     trn_wide_x = self.__train_wide_feature.iloc[trn_idx]
+        #     val_wide_x = self.__train_wide_feature.iloc[val_idx]
         #
-        # train_feature_for_model.append(self.__train_wide_feature.values)
-        # test_feature_for_model.append(self.__test_wide_feature.values)
+        #     trn_deep_x, trn_y = self.__train_deep_feature.iloc[trn_idx], self.__train_label.iloc[trn_idx]
+        #     val_deep_x, val_y = self.__train_deep_feature.iloc[val_idx], self.__train_label.iloc[val_idx]
         #
-        # # net
-        # input_layers = list()
-        # embedding_layers = list()
-        # # net categorical deep feature
-        # for col, num in self.__categorical_columns_item.items():
-        #     input_deep_cat_layer = Input(shape=(1,), name=col + "_categorical_deep_input")
-        #     embedding_layer = Embedding(
-        #         input_dim=num,
-        #         output_dim=min(10, num // 2),
-        #         input_length=1,
-        #         name=col + "_deep_embedding")(input_deep_cat_layer)
-        #     embedding_layer = Reshape(target_shape=(min(10, num // 2), ), name=col + "_deep_reshape")(embedding_layer)
-        #     input_layers.append(input_deep_cat_layer)
-        #     embedding_layers.append(embedding_layer)
-        # # net numeric deep feature
-        # input_deep_num_layer = Input(
-        #     shape=(len(self.__train_deep_feature.columns) - len(self.__categorical_columns_item),),
-        #     name="numeric_deep_input")
-        # input_layers.append(input_deep_num_layer)
-        # # net numeric wide feature
-        # input_wide_layer = Input(shape=(self.__train_wide_feature.shape[1],), name="numeric_wide_input")
-        # input_layers.append(input_wide_layer)
+        #     tra_feature_for_model = []
+        #     val_feature_for_model = []
+        #     test_feature_for_model = []
         #
-        # hidden_layer = Dense(
-        #     units=16,
-        #     kernel_initializer=lecun_normal(),
-        #     activation="selu")(
-        #     Concatenate()([Concatenate()(embedding_layers), input_deep_num_layer]))
-        # hidden_layer = Dense(
-        #     units=8,
-        #     kernel_initializer=lecun_normal(),
-        #     activation="selu")(hidden_layer)
-        # hidden_layer = Dense(
-        #     units=4,
-        #     kernel_initializer=lecun_normal(),
-        #     activation="selu")(hidden_layer)
-        # hidden_layer = Concatenate()([hidden_layer, input_wide_layer])
-        # output_layer = Dense(
-        #     units=1,
-        #     kernel_initializer=lecun_normal(),
-        #     bias_initializer=constant(self.__train_label.mean()),
-        #     activation="sigmoid",
-        #     name="output_layer")(hidden_layer)
-        # self.__net = Model(input_layers, output_layer)
-        # self.__net.compile(loss="binary_crossentropy", optimizer=Adam(lr=0.0001), metrics=[roc_auc_score])
+        #     for col in self.__categorical_columns:
+        #         tra_feature_for_model.append(trn_deep_x[col].values)
+        #         val_feature_for_model.append(val_deep_x[col].values)
+        #         test_feature_for_model.append(self.__test_deep_feature[col].values)
         #
-        # self.__net.fit(
-        #          train_feature_for_model,
-        #          self.__train_label.values,
-        #          epochs=25,
-        #          batch_size=32,
-        #          verbose=2,
-        #          callbacks=[
-        #              TensorBoard(
-        #                  log_dir="./logs/{}".format(round(time())),
-        #                  histogram_freq=1,
-        #                  write_grads=True,
-        #                  write_images=False
-        #              )
-        #          ],
-        #          validation_split=0.20
+        #     tra_feature_for_model.append(trn_deep_x[self.__numeric_columns].values)
+        #     val_feature_for_model.append(val_deep_x[self.__numeric_columns].values)
+        #     test_feature_for_model.append(self.__test_deep_feature[self.__numeric_columns].values)
+        #
+        #     tra_feature_for_model.append(trn_wide_x.values)
+        #     val_feature_for_model.append(val_wide_x.values)
+        #     test_feature_for_model.append(self.__test_wide_feature.values)
+        #
+        #     del trn_wide_x, val_wide_x, trn_deep_x, val_deep_x
+        #
+        #     # net
+        #     input_layers = list()
+        #     embedding_layers = list()
+        #
+        #     # net categorical deep feature
+        #     for col, num in self.__categorical_columns_item.items():
+        #         input_deep_cat_layer = Input(shape=(1,), name=col + "_categorical_deep_input")
+        #         embedding_layer = Embedding(
+        #             input_dim=num,
+        #             output_dim=min(50, num // 2),
+        #             embeddings_initializer=random_uniform(minval=-1, maxval=1),
+        #             input_length=1,
+        #             name=col + "_deep_embedding")(input_deep_cat_layer)
+        #         embedding_layer = (
+        #             Reshape(target_shape=(min(50, num // 2), ), name=col + "_deep_reshape")(embedding_layer))
+        #         input_layers.append(input_deep_cat_layer)
+        #         embedding_layers.append(embedding_layer)
+        #
+        #     # net numeric deep feature
+        #     input_deep_num_layer = Input(
+        #         shape=(len(self.__train_deep_feature.columns) - len(self.__categorical_columns_item),),
+        #         name="numeric_deep_input")
+        #     input_layers.append(input_deep_num_layer)
+        #
+        #     # net numeric wide feature
+        #     input_wide_layer = Input(shape=(self.__train_wide_feature.shape[1],), name="numeric_wide_input")
+        #     input_layers.append(input_wide_layer)
+        #
+        #     hidden_layer = Dense(
+        #         units=48,
+        #         kernel_initializer=lecun_normal(),
+        #         activation="selu")(
+        #         Concatenate()([Concatenate()(embedding_layers), input_deep_num_layer]))
+        #     hidden_layer = Dense(
+        #         units=24,
+        #         kernel_initializer=lecun_normal(),
+        #         activation="selu")(hidden_layer)
+        #     hidden_layer = Dense(
+        #         units=12,
+        #         kernel_initializer=lecun_normal(),
+        #         activation="selu")(hidden_layer)
+        #     hidden_layer = Concatenate()([hidden_layer, input_wide_layer])
+        #     output_layer = Dense(
+        #         units=1,
+        #         kernel_initializer=lecun_normal(),
+        #         bias_initializer=constant(logit(trn_y.mean())),
+        #         activation="sigmoid", name="output_layer")(hidden_layer)
+        #
+        #     self.__net = Model(input_layers, output_layer)
+        #     self.__net.compile(loss="binary_crossentropy", optimizer=Adam(lr=0.0001), metrics=[roc_auc_score])
+        #
+        #     self.__net.fit(
+        #         tra_feature_for_model,
+        #         trn_y.values,
+        #         epochs=35,
+        #         batch_size=32,
+        #         verbose=0,
+        #         callbacks=[
+        #             TensorBoard(),
+        #             EarlyStopping(patience=5, restore_best_weights=True)
+        #         ],
+        #         validation_data=(val_feature_for_model, val_y.values)
         #     )
         #
-        # self.__sub_preds = self.__net.predict(test_feature_for_model)
+        #     pred_val = self.__net.predict(val_feature_for_model).reshape((-1,))
+        #     cv_gini = gini_normalized(val_y.values.reshape((-1,)), pred_val)
+        #     print("Fold %i prediction cv gini: %.5f" % (n_fold, cv_gini))
+        #
+        #     pred_test = self.__net.predict(test_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
+        #     self.__sub_preds += logit(pred_test) / self.__folds.n_splits
+
+        train_feature_for_model = []
+        test_feature_for_model = []
+
+        for col in self.__categorical_columns:
+            train_feature_for_model.append(self.__train_deep_feature[col].values)
+            test_feature_for_model.append(self.__test_deep_feature[col].values)
+
+        train_feature_for_model.append(self.__train_deep_feature[self.__numeric_columns].values)
+        test_feature_for_model.append(self.__test_deep_feature[self.__numeric_columns].values)
+
+        train_feature_for_model.append(self.__train_wide_feature.values)
+        test_feature_for_model.append(self.__test_wide_feature.values)
+
+        # net
+        input_layers = list()
+        embedding_layers = list()
+        # net categorical deep feature
+        for col, num in self.__categorical_columns_item.items():
+            input_deep_cat_layer = Input(shape=(1,), name=col + "_categorical_deep_input")
+            embedding_layer = Embedding(
+                input_dim=num,
+                output_dim=min(50, num // 2),
+                input_length=1,
+                name=col + "_deep_embedding")(input_deep_cat_layer)
+            embedding_layer = Reshape(target_shape=(min(50, num // 2), ), name=col + "_deep_reshape")(embedding_layer)
+            input_layers.append(input_deep_cat_layer)
+            embedding_layers.append(embedding_layer)
+        # net numeric deep feature
+        input_deep_num_layer = Input(
+            shape=(len(self.__train_deep_feature.columns) - len(self.__categorical_columns_item),),
+            name="numeric_deep_input")
+        input_layers.append(input_deep_num_layer)
+        # net numeric wide feature
+        input_wide_layer = Input(shape=(self.__train_wide_feature.shape[1],), name="numeric_wide_input")
+        input_layers.append(input_wide_layer)
+
+        hidden_layer = Dense(
+            units=48,
+            kernel_initializer=lecun_normal(),
+            activation="selu")(
+            Concatenate()([Concatenate()(embedding_layers), input_deep_num_layer]))
+        hidden_layer = Dense(
+            units=24,
+            kernel_initializer=lecun_normal(),
+            activation="selu")(hidden_layer)
+        hidden_layer = Dense(
+            units=12,
+            kernel_initializer=lecun_normal(),
+            activation="selu")(hidden_layer)
+        hidden_layer = Concatenate()([hidden_layer, input_wide_layer])
+        output_layer = Dense(
+            units=1,
+            kernel_initializer=lecun_normal(),
+            bias_initializer=constant(logit(self.__train_label.mean())),
+            activation="sigmoid",
+            name="output_layer")(hidden_layer)
+        self.__net = Model(input_layers, output_layer)
+        self.__net.compile(loss="binary_crossentropy", optimizer=Adam(lr=0.0001), metrics=[roc_auc_score])
+
+        self.__net.fit(
+                 train_feature_for_model,
+                 self.__train_label.values,
+                 epochs=25,
+                 batch_size=32,
+                 verbose=2
+            )
+
+        self.__sub_preds = self.__net.predict(test_feature_for_model)
 
     def data_write(self):
         self.__test_index["target"] = expit(self.__sub_preds.reshape((-1,)))
