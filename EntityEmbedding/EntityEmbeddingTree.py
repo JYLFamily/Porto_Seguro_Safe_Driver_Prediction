@@ -10,7 +10,7 @@ from sklearn.base import TransformerMixin
 from category_encoders import TargetEncoder
 from category_encoders import BinaryEncoder
 from sklearn.ensemble import RandomForestClassifier
-from EntityEmbedding.Util import optimize_rf
+from EntityEmbedding.TreeUtil import optimize_rf
 np.random.seed(7)
 pd.set_option("display.max_row", None)
 pd.set_option("display.max_columns", None)
