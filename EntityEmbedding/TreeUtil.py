@@ -36,6 +36,6 @@ def optimize_rf(feature, target):
         verbose=2
     )
 
-    optimizer.maximize(init_points=5, n_iter=5, alpha=1e-4)
+    optimizer.maximize(init_points=2, n_iter=2, alpha=1e-4)
 
     return optimizer.max["target"], optimizer.max["params"]

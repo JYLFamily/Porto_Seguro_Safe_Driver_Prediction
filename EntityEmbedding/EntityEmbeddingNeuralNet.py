@@ -16,22 +16,11 @@ from scipy.special import expit, logit
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.optimizers import Adam
 from EntityEmbedding.EntityEmbeddingTree import EntityEmbeddingTree
-from EntityEmbedding.NeuralNetUtil import network
+from EntityEmbedding.NeuralNetUtil import network, network_preformance
 np.random.seed(7)
 set_random_seed(7)
 pd.set_option("display.max_row", None)
 pd.set_option("display.max_columns", None)
-
-
-def gini(y_true, y_pred):
-    num = len(y_true)
-    a_c = y_true[np.argsort(y_pred)].cumsum()
-
-    return (a_c.sum() / a_c[-1] - (num + 1) / 2.0) / num
-
-
-def gini_normalized(y_true, y_pred):
-    return gini(y_true, y_pred) / gini(y_true, y_true)
 
 
 def roc_auc_score(y_true, y_pred):
@@ -81,8 +70,8 @@ class EntityEmbeddingNeuralNet(object):
             self.__train_feature[[col for col in self.__train_feature.columns if not col.startswith("ps_calc_")]]
         self.__test_feature = self.__test_feature[self.__train_feature.columns]
 
-        self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith(("_bin", "_cat"))]
-        self.__categorical_columns = [col for col in self.__train_feature.columns if col.endswith(("_bin", "_cat"))]
+        self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith("_cat")]
+        self.__categorical_columns = [col for col in self.__train_feature.columns if col.endswith("_cat")]
 
         # deep feature
         self.__train_deep_feature = self.__train_feature.copy(deep=True)
@@ -103,7 +92,7 @@ class EntityEmbeddingNeuralNet(object):
 
     def model_fit_predict(self):
         # blending
-        self.__folds = StratifiedKFold(n_splits=5, shuffle=True, random_state=7)
+        self.__folds = StratifiedKFold(n_splits=3, shuffle=True, random_state=7)
         self.__sub_preds = np.zeros(shape=(self.__test_deep_feature.shape[0], ))
 
         for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
@@ -114,10 +103,6 @@ class EntityEmbeddingNeuralNet(object):
             val_deep_x, val_y = \
                 self.__train_deep_feature.iloc[val_idx].copy(deep=True), self.__train_label.iloc[val_idx].copy(deep=True)
             tes_deep_x = self.__test_deep_feature.copy(deep=True)
-
-            trn_wide_x = self.__train_wide_feature.iloc[trn_idx].copy(deep=True)
-            val_wide_x = self.__train_wide_feature.iloc[val_idx].copy(deep=True)
-            tes_wide_x = self.__test_wide_feature.copy(deep=True)
 
             # deep feature categorical
             for col in tqdm(self.__categorical_columns):
@@ -172,6 +157,16 @@ class EntityEmbeddingNeuralNet(object):
             val_deep_x[self.__numeric_columns] = val_deep_x[self.__numeric_columns].fillna(0.)
             tes_deep_x[self.__numeric_columns] = tes_deep_x[self.__numeric_columns].fillna(0.)
 
+            # wide feature
+            trn_wide_x = self.__train_wide_feature.iloc[trn_idx].copy(deep=True)
+            val_wide_x = self.__train_wide_feature.iloc[val_idx].copy(deep=True)
+            tes_wide_x = self.__test_wide_feature.copy(deep=True)
+
+            # augment in fold
+            # trn_deep_x = pd.concat([trn_deep_x, trn_deep_x], axis=0)
+            # trn_wide_x = pd.concat([trn_wide_x, trn_wide_x], axis=0)
+            # trn_y = pd.concat([trn_y, trn_y], axis=0)
+
             trn_feature_for_model = []
             val_feature_for_model = []
             tes_feature_for_model = []
@@ -202,17 +197,24 @@ class EntityEmbeddingNeuralNet(object):
                 trn_y.values,
                 epochs=35,
                 batch_size=32,
-                verbose=0,
+                verbose=2,
                 callbacks=[
                     TensorBoard(),
-                    EarlyStopping(patience=5, restore_best_weights=True)
-                ],
+                    EarlyStopping(
+                        patience=5,
+                        restore_best_weights=True
+                    )],
                 validation_data=(val_feature_for_model, val_y.values)
             )
 
-            pred_val = self.__net.predict(val_feature_for_model).reshape((-1,))
-            cv_gini = gini_normalized(val_y.values.reshape((-1,)), pred_val)
-            print("Fold %i prediction cv gini: %.5f" % (n_fold, cv_gini))
+            network_preformance(
+                n_fold=n_fold,
+                net=self.__net,
+                trn_feature=trn_feature_for_model,
+                val_feature=val_feature_for_model,
+                trn_label=trn_y,
+                val_label=val_y
+            )
 
             pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
             self.__sub_preds += logit(pred_test) / self.__folds.n_splits
