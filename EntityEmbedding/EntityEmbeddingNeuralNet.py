@@ -9,13 +9,12 @@ import tensorflow as tf
 import keras.backend as k
 from tqdm import tqdm
 from tensorflow import set_random_seed
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from category_encoders import BinaryEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from scipy.special import expit, logit
-from keras.callbacks import TensorBoard, EarlyStopping
+from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
-from EntityEmbedding.EntityEmbeddingTree import EntityEmbeddingTree
+from LearningRateFinder.LearningRateFinder import LearningRateFinder
 from EntityEmbedding.NeuralNetUtil import network, network_preformance
 np.random.seed(7)
 set_random_seed(7)
@@ -38,8 +37,8 @@ class EntityEmbeddingNeuralNet(object):
         self.__train_feature, self.__train_label = [None for _ in range(2)]
         self.__test_feature, self.__test_index = [None for _ in range(2)]
 
-        self.__train_wide_feature, self.__test_wide_feature = [pd.DataFrame() for _ in range(2)]
         self.__train_deep_feature, self.__test_deep_feature = [pd.DataFrame() for _ in range(2)]
+        self.__train_wide_feature, self.__test_wide_feature = [pd.DataFrame() for _ in range(2)]
 
         self.__numeric_columns = list()
         self.__categorical_columns = list()
@@ -78,21 +77,23 @@ class EntityEmbeddingNeuralNet(object):
         self.__test_deep_feature = self.__test_feature.copy(deep=True)
 
         # wide feature
-        eet = EntityEmbeddingTree(
-            numeric_columns=self.__numeric_columns,
-            categorical_columns=self.__categorical_columns
-        )
-        eet.fit(self.__train_feature, self.__train_label)
-
-        encoder = BinaryEncoder()  # binary encoder need pandas dataframe input type str
-        self.__train_wide_feature = encoder.fit_transform(eet.transform(self.__train_feature))
-        self.__test_wide_feature = encoder.transform(eet.transform(self.__test_feature))
-        del self.__train_feature, self.__test_feature
-        gc.collect()
+        # from EntityEmbedding.EntityEmbeddingTree import EntityEmbeddingTree
+        # eet = EntityEmbeddingTree(
+        #     numeric_columns=self.__numeric_columns,
+        #     categorical_columns=self.__categorical_columns
+        # )
+        # eet.fit(self.__train_feature, self.__train_label)
+        #
+        # from category_encoders import BinaryEncoder
+        # encoder = BinaryEncoder()  # binary encoder need pandas dataframe input type str
+        # self.__train_wide_feature = encoder.fit_transform(eet.transform(self.__train_feature))
+        # self.__test_wide_feature = encoder.transform(eet.transform(self.__test_feature))
+        # del self.__train_feature, self.__test_feature
+        # gc.collect()
 
     def model_fit_predict(self):
         # blending
-        self.__folds = StratifiedKFold(n_splits=3, shuffle=True, random_state=7)
+        self.__folds = StratifiedKFold(n_splits=10, shuffle=True, random_state=7)
         self.__sub_preds = np.zeros(shape=(self.__test_deep_feature.shape[0], ))
 
         for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
@@ -158,14 +159,15 @@ class EntityEmbeddingNeuralNet(object):
             tes_deep_x[self.__numeric_columns] = tes_deep_x[self.__numeric_columns].fillna(0.)
 
             # wide feature
-            trn_wide_x = self.__train_wide_feature.iloc[trn_idx].copy(deep=True)
-            val_wide_x = self.__train_wide_feature.iloc[val_idx].copy(deep=True)
-            tes_wide_x = self.__test_wide_feature.copy(deep=True)
+            # trn_wide_x = self.__train_wide_feature.iloc[trn_idx].copy(deep=True)
+            # val_wide_x = self.__train_wide_feature.iloc[val_idx].copy(deep=True)
+            # tes_wide_x = self.__test_wide_feature.copy(deep=True)
 
-            # augment in fold
-            # trn_deep_x = pd.concat([trn_deep_x, trn_deep_x], axis=0)
-            # trn_wide_x = pd.concat([trn_wide_x, trn_wide_x], axis=0)
-            # trn_y = pd.concat([trn_y, trn_y], axis=0)
+            encoder = OneHotEncoder(categories="auto", sparse=True)
+            encoder.fit(trn_deep_x[self.__categorical_columns_item.keys()])
+            trn_wide_x = encoder.transform(trn_deep_x[self.__categorical_columns_item.keys()])
+            val_wide_x = encoder.transform(val_deep_x[self.__categorical_columns_item.keys()])
+            tes_wide_x = encoder.transform(tes_deep_x[self.__categorical_columns_item.keys()])
 
             trn_feature_for_model = []
             val_feature_for_model = []
@@ -180,48 +182,56 @@ class EntityEmbeddingNeuralNet(object):
             val_feature_for_model.append(val_deep_x[self.__numeric_columns].values)
             tes_feature_for_model.append(tes_deep_x[self.__numeric_columns].values)
 
-            trn_feature_for_model.append(trn_wide_x.values)
-            val_feature_for_model.append(val_wide_x.values)
-            tes_feature_for_model.append(tes_wide_x.values)
+            # trn_feature_for_model.append(trn_wide_x.values)
+            # val_feature_for_model.append(val_wide_x.values)
+            # tes_feature_for_model.append(tes_wide_x.values)
+
+            trn_feature_for_model.append(trn_wide_x)
+            val_feature_for_model.append(val_wide_x)
+            tes_feature_for_model.append(tes_wide_x)
 
             self.__net = network(
                 categorical_columns_item=self.__categorical_columns_item,
-                num_deep_numeric_feature=len(trn_deep_x.columns) - len(self.__categorical_columns_item),
-                num_wide_numeric_feature=len(trn_wide_x.columns),
+                num_deep_numeric_feature=trn_deep_x.shape[1] - len(self.__categorical_columns_item),
+                num_wide_numeric_feature=trn_wide_x.shape[1],
                 bias=trn_y.mean()
             )
-            self.__net.compile(loss="binary_crossentropy", optimizer=Adam(lr=0.0001), metrics=[roc_auc_score])
+            self.__net.compile(loss="binary_crossentropy", optimizer=Adam(), metrics=[roc_auc_score])
 
-            self.__net.fit(
-                trn_feature_for_model,
-                trn_y.values,
-                epochs=35,
-                batch_size=32,
-                verbose=2,
-                callbacks=[
-                    TensorBoard(),
-                    EarlyStopping(
-                        patience=5,
-                        restore_best_weights=True
-                    )],
-                validation_data=(val_feature_for_model, val_y.values)
-            )
+            lrf = LearningRateFinder(net=self.__net)
+            lrf.find_lr(trn_feature=trn_feature_for_model, trn_label=trn_y)
+            self.__net = lrf.get_net()
 
-            network_preformance(
-                n_fold=n_fold,
-                net=self.__net,
-                trn_feature=trn_feature_for_model,
-                val_feature=val_feature_for_model,
-                trn_label=trn_y,
-                val_label=val_y
-            )
-
-            pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
-            self.__sub_preds += logit(pred_test) / self.__folds.n_splits
-
-            self.__categorical_columns_item.clear()
-            del trn_wide_x, val_wide_x, tes_wide_x, trn_deep_x, val_deep_x, tes_deep_x
-            gc.collect()
+            # self.__net.fit(
+            #     x=trn_feature_for_model,
+            #     y=trn_y.values,
+            #     epochs=100,
+            #     batch_size=32,
+            #     verbose=2,
+            #     callbacks=[
+            #         EarlyStopping(
+            #             patience=20,
+            #             min_delta=1e-4,
+            #             restore_best_weights=True
+            #         )],
+            #     validation_data=(val_feature_for_model, val_y.values)
+            # )
+            #
+            # network_preformance(
+            #     n_fold=n_fold,
+            #     net=self.__net,
+            #     trn_feature=trn_feature_for_model,
+            #     val_feature=val_feature_for_model,
+            #     trn_label=trn_y,
+            #     val_label=val_y
+            # )
+            #
+            # pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
+            # self.__sub_preds += logit(pred_test) / self.__folds.n_splits
+            #
+            # self.__categorical_columns_item.clear()
+            # del trn_wide_x, val_wide_x, tes_wide_x, trn_deep_x, val_deep_x, tes_deep_x
+            # gc.collect()
 
     def data_write(self):
         self.__test_index["target"] = expit(self.__sub_preds.reshape((-1,)))

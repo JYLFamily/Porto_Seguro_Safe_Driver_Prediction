@@ -65,7 +65,7 @@ def network(categorical_columns_item, num_deep_numeric_feature, num_wide_numeric
         units=8,
         kernel_initializer=lecun_normal(),
         activation="selu")(hidden_layer)
-    hidden_layer = Concatenate()([hidden_layer, input_wide_num_layer])
+    hidden_layer = Concatenate()([hidden_layer, Dense(units=1, )(input_wide_num_layer)])
     output_layer = Dense(
         units=1,
         kernel_initializer=lecun_normal(),
