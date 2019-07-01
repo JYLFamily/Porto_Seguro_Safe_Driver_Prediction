@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="37ad1d08-f23f-4ebc-9dc6-e730fdf04592" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/LearningRateFinder/__init__.py" afterDir="false" />
+    <list default="true" id="37ad1d08-f23f-4ebc-9dc6-e730fdf04592" name="Default Changelist" comment="UPDATE BLENDING">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" beforeDir="false" afterPath="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" beforeDir="false" afterPath="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EntityEmbedding/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/EntityEmbedding/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/EntityEmbeddingHyperas/EntityEmbeddingNeuralNetHyperas.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EntityEmbeddingHyperas/ParameterTuning.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EntityEmbeddingHyperas/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py" beforeDir="false" afterPath="$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -25,8 +21,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="702">
-              <caret line="194" column="28" lean-forward="true" selection-start-line="194" selection-start-column="28" selection-end-line="194" selection-end-column="28" />
+            <state relative-caret-position="390">
+              <caret line="108" column="90" lean-forward="true" selection-start-line="108" selection-start-column="90" selection-end-line="108" selection-end-column="90" />
               <folding>
                 <element signature="e#16#25#0" expanded="true" />
               </folding>
@@ -91,25 +87,26 @@
         <option value="$PROJECT_DIR$/EntityEmbedding/Util.py" />
         <option value="$PROJECT_DIR$/EntityEmbedding/NetworkUtil.py" />
         <option value="$PROJECT_DIR$/EntityEmbedding/TreeUtil.py" />
-        <option value="$PROJECT_DIR$/EntityEmbedding/config.yaml" />
         <option value="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" />
         <option value="E:/ProgramFiles/Anaconda3/Lib/site-packages/keras_lr_finder/lr_finder.py" />
-        <option value="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" />
         <option value="$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py" />
+        <option value="$PROJECT_DIR$/EntityEmbedding/config.yaml" />
+        <option value="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-39" />
-    <option name="y" value="51" />
-    <option name="width" value="1936" />
-    <option name="height" value="1100" />
+    <option name="x" value="593" />
+    <option name="y" value="90" />
+    <option name="width" value="974" />
+    <option name="height" value="1047" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -121,7 +118,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -272,22 +268,22 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1862" height="1096" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4946581" visible="true" weight="0.22971492" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4946581" visible="true" weight="0.15068494" />
       <window_info id="Structure" order="1" sideWeight="0.5074074" side_tool="true" weight="0.22971492" />
       <window_info id="Favorites" order="2" sideWeight="0.50106835" side_tool="true" weight="0.14638157" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4961623" weight="0.89636755" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.4961623" weight="0.8849252" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.49945176" weight="0.328125" />
-      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.49945176" weight="0.32692307" />
+      <window_info anchor="bottom" id="Version Control" order="7" sideWeight="0.49945176" weight="0.32681242" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32924107" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5038377" side_tool="true" weight="0.5117521" />
-      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.49780703" weight="0.49252138" />
+      <window_info anchor="bottom" id="Python Console" order="10" sideWeight="0.49780703" weight="0.49252012" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -318,7 +314,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="UPDATE BLENDING" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/sklearn/base.py" />
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/category_encoders/utils.py" />
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/pandas/io/parsers.py" />
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/sklearn/impute.py" />
@@ -354,41 +349,11 @@
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/callbacks.py" />
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/layers/core.py" />
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/layers/noise.py" />
-    <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/optimizers.py" />
     <entry file="file://$USER_HOME$/.PyCharmCE2019.1/system/python_stubs/1653496950/scipy/special/_ufuncs.py" />
     <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/layers/embeddings.py" />
     <entry file="file://$USER_HOME$/.PyCharmCE2019.1/system/python_stubs/1262551113/scipy/special/_ufuncs.py" />
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/engine/training.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1899">
-          <caret line="890" column="24" selection-start-line="890" selection-start-column="12" selection-end-line="890" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/EntityEmbedding/config.yaml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="27">
-          <caret line="1" column="61" selection-start-line="1" selection-start-column="61" selection-end-line="1" selection-end-column="61" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/sklearn/preprocessing/_encoders.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="468">
-          <caret line="177" column="33" lean-forward="true" selection-start-line="177" selection-start-column="33" selection-end-line="177" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingTree.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="460">
-          <caret line="35" column="51" selection-start-line="35" selection-start-column="51" selection-end-line="35" selection-end-column="51" />
-          <folding>
-            <element signature="e#16#25#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/engine/training.py" />
+    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/sklearn/preprocessing/_encoders.py" />
     <entry file="file://$PROJECT_DIR$/EntityEmbedding/TreeUtil.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
@@ -399,38 +364,54 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/callbacks.py">
+    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/callbacks.py" />
+    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras_lr_finder/lr_finder.py" />
+    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/optimizers.py" />
+    <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/sklearn/preprocessing/data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="621">
-          <caret line="556" column="61" lean-forward="true" selection-start-line="556" selection-start-column="25" selection-end-line="556" selection-end-column="61" />
+        <state relative-caret-position="-8">
+          <caret line="644" selection-start-line="644" selection-end-line="644" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1512">
-          <caret line="61" column="42" lean-forward="true" selection-start-line="61" selection-start-column="42" selection-end-line="61" selection-end-column="42" />
+        <state relative-caret-position="681">
+          <caret line="38" column="60" selection-start-line="38" selection-start-column="34" selection-end-line="38" selection-end-column="60" />
+          <folding>
+            <element signature="e#16#34#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras_lr_finder/lr_finder.py">
+    <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingTree.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="490">
-          <caret line="40" column="38" selection-start-line="40" selection-start-column="38" selection-end-line="40" selection-end-column="38" />
+        <state relative-caret-position="134">
+          <caret line="35" column="51" selection-start-line="35" selection-start-column="51" selection-end-line="35" selection-end-column="51" />
+          <folding>
+            <element signature="e#16#25#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/keras/optimizers.py">
+    <entry file="file://$PROJECT_DIR$/EntityEmbedding/config.yaml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="486">
-          <caret line="457" column="26" selection-start-line="457" selection-start-column="26" selection-end-line="457" selection-end-column="31" />
+        <state relative-caret-position="27">
+          <caret line="1" column="61" selection-start-line="1" selection-start-column="61" selection-end-line="1" selection-end-column="61" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/optimizers.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="276">
+          <caret line="457" column="8" selection-start-line="457" selection-start-column="8" selection-end-line="457" selection-end-column="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1381">
-          <caret line="61" column="22" lean-forward="true" selection-start-line="61" selection-start-column="22" selection-end-line="61" selection-end-column="22" />
+        <state relative-caret-position="-625">
+          <caret line="28" lean-forward="true" selection-start-line="28" selection-end-line="28" />
           <folding>
             <element signature="e#16#34#0" expanded="true" />
           </folding>
@@ -439,8 +420,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="702">
-          <caret line="194" column="28" lean-forward="true" selection-start-line="194" selection-start-column="28" selection-end-line="194" selection-end-column="28" />
+        <state relative-caret-position="390">
+          <caret line="108" column="90" lean-forward="true" selection-start-line="108" selection-start-column="90" selection-end-line="108" selection-end-column="90" />
           <folding>
             <element signature="e#16#25#0" expanded="true" />
           </folding>

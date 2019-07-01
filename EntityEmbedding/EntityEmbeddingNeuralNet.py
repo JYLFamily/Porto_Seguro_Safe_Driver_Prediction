@@ -14,7 +14,6 @@ from sklearn.model_selection import StratifiedKFold
 from scipy.special import expit, logit
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
-from LearningRateFinder.LearningRateFinder import LearningRateFinder
 from EntityEmbedding.NeuralNetUtil import network, network_preformance
 np.random.seed(7)
 set_random_seed(7)
@@ -62,8 +61,28 @@ class EntityEmbeddingNeuralNet(object):
         gc.collect()
 
         # data clean
-        self.__train_feature.rename(columns={"ps_car_08_cat": "ps_car_08_bin"}, inplace=True)  # ps_car_08_cat binary
-        self.__test_feature.rename(columns={"ps_car_08_cat": "ps_car_08_bin"}, inplace=True)
+        self.__train_feature.rename(columns={
+            "ps_car_08_cat": "ps_car_08_bin",  # nunique 2
+            "ps_ind_01": "ps_ind_01_num_cat",  # nunique 8
+            "ps_ind_03": "ps_ind_03_num_cat",  # nunique 12
+            "ps_ind_14": "ps_ind_14_num_cat",  # nunique 5
+            "ps_ind_15": "ps_ind_15_num_cat",  # nunique 14
+            "ps_reg_01": "ps_reg_01_num_cat",  # nunique 10
+            "ps_reg_02": "ps_reg_02_num_cat",  # nunqiue 19
+            "ps_car_11": "ps_car_11_num_cat",  # nunique 5
+            "ps_car_15": "ps_car_15_num_cat"},  # nunique 15
+            inplace=True
+        )
+        self.__test_feature.rename(columns={
+            "ps_car_08_cat": "ps_car_08_bin",
+            "ps_ind_01": "ps_ind_01_num_cat",
+            "ps_ind_03": "ps_ind_03_num_cat",
+            "ps_ind_14": "ps_ind_14_num_cat",
+            "ps_ind_15": "ps_ind_15_num_cat",
+            "ps_reg_01": "ps_reg_01_num_cat",
+            "ps_reg_02": "ps_reg_02_num_cat",
+            "ps_car_11": "ps_car_11_num_cat",
+            "ps_car_15": "ps_car_15_num_cat"}, inplace=True)
 
         self.__train_feature = \
             self.__train_feature[[col for col in self.__train_feature.columns if not col.startswith("ps_calc_")]]
@@ -148,11 +167,16 @@ class EntityEmbeddingNeuralNet(object):
                     self.__categorical_columns_item[col] = len(encoder.classes_)
 
             # deep feature numeric
+            trn_deep_x["ps_reg_03"] = np.log1p(trn_deep_x["ps_reg_03"])
+            trn_deep_x["ps_car_12"] = np.log1p(trn_deep_x["ps_car_12"])
+            trn_deep_x["ps_car_13"] = np.log1p(trn_deep_x["ps_car_13"])
+            trn_deep_x["ps_car_14"] = np.log1p(trn_deep_x["ps_car_14"])
+
             scaler = StandardScaler()  # calc std, mean skip np.nan
             scaler.fit(trn_deep_x[self.__numeric_columns])
-            trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns])
-            val_deep_x[self.__numeric_columns] = scaler.transform(val_deep_x[self.__numeric_columns])
-            tes_deep_x[self.__numeric_columns] = scaler.transform(tes_deep_x[self.__numeric_columns])
+            trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns]).astype(np.float16)
+            val_deep_x[self.__numeric_columns] = scaler.transform(val_deep_x[self.__numeric_columns]).astype(np.float16)
+            tes_deep_x[self.__numeric_columns] = scaler.transform(tes_deep_x[self.__numeric_columns]).astype(np.float16)
 
             trn_deep_x[self.__numeric_columns] = trn_deep_x[self.__numeric_columns].fillna(0.)
             val_deep_x[self.__numeric_columns] = val_deep_x[self.__numeric_columns].fillna(0.)
@@ -196,42 +220,37 @@ class EntityEmbeddingNeuralNet(object):
                 num_wide_numeric_feature=trn_wide_x.shape[1],
                 bias=trn_y.mean()
             )
-            self.__net.compile(loss="binary_crossentropy", optimizer=Adam(), metrics=[roc_auc_score])
+            self.__net.compile(loss="binary_crossentropy", optimizer=Adam(0.0001), metrics=[roc_auc_score])
 
-            lrf = LearningRateFinder(net=self.__net)
-            lrf.find_lr(trn_feature=trn_feature_for_model, trn_label=trn_y)
-            self.__net = lrf.get_net()
+            self.__net.fit(
+                x=trn_feature_for_model,
+                y=trn_y.values,
+                epochs=35,
+                batch_size=32,
+                verbose=2,
+                callbacks=[
+                    EarlyStopping(
+                        patience=5,
+                        restore_best_weights=True
+                    )],
+                validation_data=(val_feature_for_model, val_y.values)
+            )
 
-            # self.__net.fit(
-            #     x=trn_feature_for_model,
-            #     y=trn_y.values,
-            #     epochs=100,
-            #     batch_size=32,
-            #     verbose=2,
-            #     callbacks=[
-            #         EarlyStopping(
-            #             patience=20,
-            #             min_delta=1e-4,
-            #             restore_best_weights=True
-            #         )],
-            #     validation_data=(val_feature_for_model, val_y.values)
-            # )
-            #
-            # network_preformance(
-            #     n_fold=n_fold,
-            #     net=self.__net,
-            #     trn_feature=trn_feature_for_model,
-            #     val_feature=val_feature_for_model,
-            #     trn_label=trn_y,
-            #     val_label=val_y
-            # )
-            #
-            # pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
-            # self.__sub_preds += logit(pred_test) / self.__folds.n_splits
-            #
-            # self.__categorical_columns_item.clear()
-            # del trn_wide_x, val_wide_x, tes_wide_x, trn_deep_x, val_deep_x, tes_deep_x
-            # gc.collect()
+            network_preformance(
+                n_fold=n_fold,
+                net=self.__net,
+                trn_feature=trn_feature_for_model,
+                val_feature=val_feature_for_model,
+                trn_label=trn_y,
+                val_label=val_y
+            )
+
+            pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
+            self.__sub_preds += logit(pred_test) / self.__folds.n_splits
+
+            self.__categorical_columns_item.clear()
+            del trn_wide_x, val_wide_x, tes_wide_x, trn_deep_x, val_deep_x, tes_deep_x
+            gc.collect()
 
     def data_write(self):
         self.__test_index["target"] = expit(self.__sub_preds.reshape((-1,)))

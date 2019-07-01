@@ -41,14 +41,13 @@ class LearningRateFinder(object):
                 self.__first_loss = loss
 
             if self.__exponential_moving_average is None:
-                self.__running_mean = loss
+                self.__exponential_moving_average = loss
             else:
                 self.__exponential_moving_average = \
                     ((1 - self.__smoothing) * loss) + (self.__smoothing * self.__exponential_moving_average)
 
             if self.__exponential_moving_average > self.__first_loss * 2 and self.__counter >= 20:
                 self.__net.stop_training = True
-
                 return
 
             lr *= self.__lr_multiplier
