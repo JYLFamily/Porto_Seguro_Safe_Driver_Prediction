@@ -36,7 +36,7 @@ class EntityEmbeddingNeuralNet(object):
         self.__train_feature, self.__train_label = [None for _ in range(2)]
         self.__test_feature, self.__test_index = [None for _ in range(2)]
 
-        self.__train_deep_feature, self.__test_deep_feature = [pd.DataFrame() for _ in range(2)]
+        self.__train_feature, self.__test_feature = [pd.DataFrame() for _ in range(2)]
         self.__train_wide_feature, self.__test_wide_feature = [pd.DataFrame() for _ in range(2)]
 
         self.__numeric_columns = list()
@@ -62,19 +62,17 @@ class EntityEmbeddingNeuralNet(object):
 
         # data clean
         self.__train_feature.rename(columns={
-            "ps_car_08_cat": "ps_car_08_bin",  # nunique 2
-            "ps_ind_01": "ps_ind_01_num_cat",  # nunique 8
-            "ps_ind_03": "ps_ind_03_num_cat",  # nunique 12
-            "ps_ind_14": "ps_ind_14_num_cat",  # nunique 5
-            "ps_ind_15": "ps_ind_15_num_cat",  # nunique 14
-            "ps_reg_01": "ps_reg_01_num_cat",  # nunique 10
-            "ps_reg_02": "ps_reg_02_num_cat",  # nunqiue 19
-            "ps_car_11": "ps_car_11_num_cat",  # nunique 5
+            "ps_ind_01": "ps_ind_01_num_cat",   # nunique 8
+            "ps_ind_03": "ps_ind_03_num_cat",   # nunique 12
+            "ps_ind_14": "ps_ind_14_num_cat",   # nunique 5
+            "ps_ind_15": "ps_ind_15_num_cat",   # nunique 14
+            "ps_reg_01": "ps_reg_01_num_cat",   # nunique 10
+            "ps_reg_02": "ps_reg_02_num_cat",   # nunqiue 19
+            "ps_car_11": "ps_car_11_num_cat",   # nunique 5
             "ps_car_15": "ps_car_15_num_cat"},  # nunique 15
             inplace=True
         )
         self.__test_feature.rename(columns={
-            "ps_car_08_cat": "ps_car_08_bin",
             "ps_ind_01": "ps_ind_01_num_cat",
             "ps_ind_03": "ps_ind_03_num_cat",
             "ps_ind_14": "ps_ind_14_num_cat",
@@ -82,18 +80,18 @@ class EntityEmbeddingNeuralNet(object):
             "ps_reg_01": "ps_reg_01_num_cat",
             "ps_reg_02": "ps_reg_02_num_cat",
             "ps_car_11": "ps_car_11_num_cat",
-            "ps_car_15": "ps_car_15_num_cat"}, inplace=True)
+            "ps_car_15": "ps_car_15_num_cat"},
+            inplace=True
+        )
 
         self.__train_feature = \
             self.__train_feature[[col for col in self.__train_feature.columns if not col.startswith("ps_calc_")]]
         self.__test_feature = self.__test_feature[self.__train_feature.columns]
 
-        self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith("_cat")]
-        self.__categorical_columns = [col for col in self.__train_feature.columns if col.endswith("_cat")]
+        self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith(("_bin", "_cat"))]
+        self.__categorical_columns = [col for col in self.__train_feature.columns if col.endswith(("_bin", "_cat"))]
 
         # deep feature
-        self.__train_deep_feature = self.__train_feature.copy(deep=True)
-        self.__test_deep_feature = self.__test_feature.copy(deep=True)
 
         # wide feature
         # from EntityEmbedding.EntityEmbeddingTree import EntityEmbeddingTree
@@ -113,16 +111,16 @@ class EntityEmbeddingNeuralNet(object):
     def model_fit_predict(self):
         # blending
         self.__folds = StratifiedKFold(n_splits=10, shuffle=True, random_state=7)
-        self.__sub_preds = np.zeros(shape=(self.__test_deep_feature.shape[0], ))
+        self.__sub_preds = np.zeros(shape=(self.__test_feature.shape[0], ))
 
         for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
-                X=self.__train_deep_feature, y=self.__train_label)):
+                X=self.__train_feature, y=self.__train_label)):
 
             trn_deep_x, trn_y = \
-                self.__train_deep_feature.iloc[trn_idx].copy(deep=True), self.__train_label.iloc[trn_idx].copy(deep=True)
+                self.__train_feature.iloc[trn_idx].copy(deep=True), self.__train_label.iloc[trn_idx].copy(deep=True)
             val_deep_x, val_y = \
-                self.__train_deep_feature.iloc[val_idx].copy(deep=True), self.__train_label.iloc[val_idx].copy(deep=True)
-            tes_deep_x = self.__test_deep_feature.copy(deep=True)
+                self.__train_feature.iloc[val_idx].copy(deep=True), self.__train_label.iloc[val_idx].copy(deep=True)
+            tes_deep_x = self.__test_feature.copy(deep=True)
 
             # deep feature categorical
             for col in tqdm(self.__categorical_columns):
@@ -167,11 +165,6 @@ class EntityEmbeddingNeuralNet(object):
                     self.__categorical_columns_item[col] = len(encoder.classes_)
 
             # deep feature numeric
-            trn_deep_x["ps_reg_03"] = np.log1p(trn_deep_x["ps_reg_03"])
-            trn_deep_x["ps_car_12"] = np.log1p(trn_deep_x["ps_car_12"])
-            trn_deep_x["ps_car_13"] = np.log1p(trn_deep_x["ps_car_13"])
-            trn_deep_x["ps_car_14"] = np.log1p(trn_deep_x["ps_car_14"])
-
             scaler = StandardScaler()  # calc std, mean skip np.nan
             scaler.fit(trn_deep_x[self.__numeric_columns])
             trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns]).astype(np.float16)
@@ -183,15 +176,15 @@ class EntityEmbeddingNeuralNet(object):
             tes_deep_x[self.__numeric_columns] = tes_deep_x[self.__numeric_columns].fillna(0.)
 
             # wide feature
-            # trn_wide_x = self.__train_wide_feature.iloc[trn_idx].copy(deep=True)
-            # val_wide_x = self.__train_wide_feature.iloc[val_idx].copy(deep=True)
-            # tes_wide_x = self.__test_wide_feature.copy(deep=True)
-
             encoder = OneHotEncoder(categories="auto", sparse=True)
-            encoder.fit(trn_deep_x[self.__categorical_columns_item.keys()])
-            trn_wide_x = encoder.transform(trn_deep_x[self.__categorical_columns_item.keys()])
-            val_wide_x = encoder.transform(val_deep_x[self.__categorical_columns_item.keys()])
-            tes_wide_x = encoder.transform(tes_deep_x[self.__categorical_columns_item.keys()])
+            encoder.fit(
+                trn_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
+            trn_wide_x = encoder.transform(
+                trn_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
+            val_wide_x = encoder.transform(
+                val_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
+            tes_wide_x = encoder.transform(
+                tes_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
 
             trn_feature_for_model = []
             val_feature_for_model = []
