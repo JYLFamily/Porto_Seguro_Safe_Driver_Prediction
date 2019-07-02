@@ -227,7 +227,7 @@ class EntityEmbeddingNeuralNet(object):
                 x=trn_feature_for_model,
                 y=trn_y.values,
                 epochs=35,
-                batch_size=32,
+                batch_size=256,
                 verbose=2,
                 callbacks=[
                     EarlyStopping(
