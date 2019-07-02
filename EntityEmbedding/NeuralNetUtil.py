@@ -2,10 +2,10 @@
 
 import numpy as np
 from keras.models import Model
-from keras.layers import Input, Embedding, Reshape, Dropout, AlphaDropout, Concatenate, Dense
-from keras.initializers import random_uniform, lecun_normal, constant
 from scipy.special import logit
 from tensorflow import set_random_seed
+from keras.initializers import random_uniform, lecun_normal, constant
+from keras.layers import Input, Embedding, Reshape, Dropout, Concatenate, Dense
 np.random.seed(7)
 set_random_seed(7)
 
@@ -65,7 +65,7 @@ def network(categorical_columns_item, num_deep_numeric_feature, num_wide_numeric
         units=8,
         kernel_initializer=lecun_normal(),
         activation="selu")(hidden_layer)
-    hidden_layer = Concatenate()([hidden_layer, Dense(units=1, )(input_wide_num_layer)])
+    hidden_layer = Concatenate()([hidden_layer, input_wide_num_layer])
     output_layer = Dense(
         units=1,
         kernel_initializer=lecun_normal(),

@@ -36,9 +36,6 @@ class EntityEmbeddingNeuralNet(object):
         self.__train_feature, self.__train_label = [None for _ in range(2)]
         self.__test_feature, self.__test_index = [None for _ in range(2)]
 
-        self.__train_feature, self.__test_feature = [pd.DataFrame() for _ in range(2)]
-        self.__train_wide_feature, self.__test_wide_feature = [pd.DataFrame() for _ in range(2)]
-
         self.__numeric_columns = list()
         self.__categorical_columns = list()
         self.__categorical_columns_item = dict()  # each fold clear
@@ -55,8 +52,10 @@ class EntityEmbeddingNeuralNet(object):
         self.__test = pd.read_csv(os.path.join(self.__input_path, "test.csv"), na_values=-1)
 
     def data_prepare(self):
-        self.__train_feature, self.__train_label = self.__train.iloc[:, 2:].copy(), self.__train.iloc[:, 1].copy()
-        self.__test_feature, self.__test_index = self.__test.iloc[:, 1:].copy(), self.__test.iloc[:, [0]].copy()
+        self.__train_feature, self.__train_label = (
+            self.__train.iloc[:, 2:].copy(deep=True), self.__train.iloc[:, 1].copy(deep=True))
+        self.__test_feature, self.__test_index = (
+            self.__test.iloc[:, 1:].copy(deep=True), self.__test.iloc[:, [0]].copy(deep=True))
         del self.__train, self.__test
         gc.collect()
 
@@ -84,8 +83,8 @@ class EntityEmbeddingNeuralNet(object):
             inplace=True
         )
 
-        self.__train_feature = \
-            self.__train_feature[[col for col in self.__train_feature.columns if not col.startswith("ps_calc_")]]
+        self.__train_feature = (
+            self.__train_feature[[col for col in self.__train_feature.columns if not col.startswith("ps_calc_")]])
         self.__test_feature = self.__test_feature[self.__train_feature.columns]
 
         self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith(("_bin", "_cat"))]
@@ -116,75 +115,84 @@ class EntityEmbeddingNeuralNet(object):
         for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
                 X=self.__train_feature, y=self.__train_label)):
 
-            trn_deep_x, trn_y = \
-                self.__train_feature.iloc[trn_idx].copy(deep=True), self.__train_label.iloc[trn_idx].copy(deep=True)
-            val_deep_x, val_y = \
-                self.__train_feature.iloc[val_idx].copy(deep=True), self.__train_label.iloc[val_idx].copy(deep=True)
-            tes_deep_x = self.__test_feature.copy(deep=True)
+            trn_x = self.__train_feature.iloc[trn_idx].copy(deep=True)
+            val_x = self.__train_feature.iloc[val_idx].copy(deep=True)
+            tes_x = self.__test_feature.copy(deep=True)
+
+            trn_y = self.__train_label.iloc[trn_idx].copy(deep=True)
+            val_y = self.__train_label.iloc[val_idx].copy(deep=True)
 
             # deep feature categorical
             for col in tqdm(self.__categorical_columns):
-                num_unique = trn_deep_x[col].nunique()
+                num_unique = trn_x[col].nunique()
 
                 if num_unique == 1:
-                    trn_deep_x = trn_deep_x.drop([col], axis=1)
-                    val_deep_x = val_deep_x.drop([col], axis=1)
-                    tes_deep_x = tes_deep_x.drop([col], axis=1)
+                    trn_x = trn_x.drop([col], axis=1)
+                    val_x = val_x.drop([col], axis=1)
+                    tes_x = tes_x.drop([col], axis=1)
                 else:
 
-                    if trn_deep_x[col].isna().sum():  # train exist np.nan
-                        trn_deep_x[col] = trn_deep_x[col].fillna("missing")
+                    if trn_x[col].isna().sum():  # train exist np.nan
+                        trn_x[col] = trn_x[col].fillna("missing")
 
-                        mode = trn_deep_x[col].value_counts().index[0]
-                        categories = trn_deep_x[col].unique()
+                        mode = trn_x[col].value_counts().index[0]
+                        categories = trn_x[col].unique()
 
-                        val_deep_x[col] = val_deep_x[col].fillna("missing")
-                        val_deep_x[col] = val_deep_x[col].apply(lambda x: x if x in categories else mode)
-                        tes_deep_x[col] = tes_deep_x[col].fillna("missing")
-                        tes_deep_x[col] = tes_deep_x[col].apply(lambda x: x if x in categories else mode)
+                        val_x[col] = val_x[col].fillna("missing")
+                        val_x[col] = val_x[col].apply(lambda x: x if x in categories else mode)
+                        tes_x[col] = tes_x[col].fillna("missing")
+                        tes_x[col] = tes_x[col].apply(lambda x: x if x in categories else mode)
 
                     else:  # train not exist np.nan
-                        mode = trn_deep_x[col].value_counts().index[0]
-                        categories = trn_deep_x[col].unique()
+                        mode = trn_x[col].value_counts().index[0]
+                        categories = trn_x[col].unique()
 
-                        val_deep_x[col] = val_deep_x[col].fillna(mode)
-                        val_deep_x[col] = val_deep_x[col].apply(lambda x: x if x in categories else mode)
-                        tes_deep_x[col] = tes_deep_x[col].fillna(mode)
-                        tes_deep_x[col] = tes_deep_x[col].apply(lambda x: x if x in categories else mode)
+                        val_x[col] = val_x[col].fillna(mode)
+                        val_x[col] = val_x[col].apply(lambda x: x if x in categories else mode)
+                        tes_x[col] = tes_x[col].fillna(mode)
+                        tes_x[col] = tes_x[col].apply(lambda x: x if x in categories else mode)
 
-                    trn_deep_x[col] = trn_deep_x[col].astype(str)
-                    val_deep_x[col] = val_deep_x[col].astype(str)
-                    tes_deep_x[col] = tes_deep_x[col].astype(str)
+                    trn_x[col] = trn_x[col].astype(str)
+                    val_x[col] = val_x[col].astype(str)
+                    tes_x[col] = tes_x[col].astype(str)
 
                     encoder = LabelEncoder()
-                    encoder.fit(trn_deep_x[col])
-                    trn_deep_x[col] = encoder.transform(trn_deep_x[col])
-                    val_deep_x[col] = encoder.transform(val_deep_x[col])
-                    tes_deep_x[col] = encoder.transform(tes_deep_x[col])
+                    encoder.fit(trn_x[col])
+                    trn_x[col] = encoder.transform(trn_x[col])
+                    val_x[col] = encoder.transform(val_x[col])
+                    tes_x[col] = encoder.transform(tes_x[col])
 
                     self.__categorical_columns_item[col] = len(encoder.classes_)
 
-            # deep feature numeric
+            # deep feature
+            trn_deep_x = trn_x.copy(deep=True)
+            val_deep_x = val_x.copy(deep=True)
+            tes_deep_x = tes_x.copy(deep=True)
+
             scaler = StandardScaler()  # calc std, mean skip np.nan
             scaler.fit(trn_deep_x[self.__numeric_columns])
-            trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns]).astype(np.float16)
-            val_deep_x[self.__numeric_columns] = scaler.transform(val_deep_x[self.__numeric_columns]).astype(np.float16)
-            tes_deep_x[self.__numeric_columns] = scaler.transform(tes_deep_x[self.__numeric_columns]).astype(np.float16)
+            trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns])
+            val_deep_x[self.__numeric_columns] = scaler.transform(val_deep_x[self.__numeric_columns])
+            tes_deep_x[self.__numeric_columns] = scaler.transform(tes_deep_x[self.__numeric_columns])
 
             trn_deep_x[self.__numeric_columns] = trn_deep_x[self.__numeric_columns].fillna(0.)
             val_deep_x[self.__numeric_columns] = val_deep_x[self.__numeric_columns].fillna(0.)
             tes_deep_x[self.__numeric_columns] = tes_deep_x[self.__numeric_columns].fillna(0.)
 
             # wide feature
-            encoder = OneHotEncoder(categories="auto", sparse=True)
-            encoder.fit(
-                trn_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
-            trn_wide_x = encoder.transform(
-                trn_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
-            val_wide_x = encoder.transform(
-                val_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
-            tes_wide_x = encoder.transform(
-                tes_deep_x[[col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]])
+            wide_feature = [col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]
+            trn_wide_x = trn_x[wide_feature].copy(deep=True)
+            val_wide_x = val_x[wide_feature].copy(deep=True)
+            tes_wide_x = tes_x[wide_feature].copy(deep=True)
+
+            encoder = OneHotEncoder(categories="auto", sparse=False)
+            encoder.fit(trn_wide_x)
+            trn_wide_x = encoder.transform(trn_wide_x)
+            val_wide_x = encoder.transform(val_wide_x)
+            tes_wide_x = encoder.transform(tes_wide_x)
+
+            del trn_x, val_x, tes_x
+            gc.collect()
 
             trn_feature_for_model = []
             val_feature_for_model = []
@@ -209,7 +217,7 @@ class EntityEmbeddingNeuralNet(object):
 
             self.__net = network(
                 categorical_columns_item=self.__categorical_columns_item,
-                num_deep_numeric_feature=trn_deep_x.shape[1] - len(self.__categorical_columns_item),
+                num_deep_numeric_feature=len(self.__numeric_columns),
                 num_wide_numeric_feature=trn_wide_x.shape[1],
                 bias=trn_y.mean()
             )
