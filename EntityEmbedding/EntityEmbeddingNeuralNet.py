@@ -42,6 +42,7 @@ class EntityEmbeddingNeuralNet(object):
 
         # model fit predict
         self.__folds = None
+        self.__val_preds = None
         self.__sub_preds = None
 
         self.__net = None
@@ -110,6 +111,7 @@ class EntityEmbeddingNeuralNet(object):
     def model_fit_predict(self):
         # blending
         self.__folds = StratifiedKFold(n_splits=10, shuffle=True, random_state=7)
+        self.__val_preds = np.zeros(shape=(self.__train_feature.shape[0], ))
         self.__sub_preds = np.zeros(shape=(self.__test_feature.shape[0], ))
 
         for n_fold, (trn_idx, val_idx) in enumerate(self.__folds.split(
@@ -226,12 +228,13 @@ class EntityEmbeddingNeuralNet(object):
             self.__net.fit(
                 x=trn_feature_for_model,
                 y=trn_y.values,
-                epochs=35,
+                epochs=50,
                 batch_size=256,
                 verbose=2,
                 callbacks=[
                     EarlyStopping(
-                        patience=5,
+                        patience=10,
+                        min_delta=1e-4,
                         restore_best_weights=True
                     )],
                 validation_data=(val_feature_for_model, val_y.values)
@@ -246,7 +249,10 @@ class EntityEmbeddingNeuralNet(object):
                 val_label=val_y
             )
 
-            pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
+            pred_vals = self.__net.predict(val_feature_for_model).reshape((-1,))  # 2D shape -> 1D shape
+            self.__val_preds[val_idx] += logit(pred_vals)
+
+            pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))
             self.__sub_preds += logit(pred_test) / self.__folds.n_splits
 
             self.__categorical_columns_item.clear()
@@ -254,6 +260,9 @@ class EntityEmbeddingNeuralNet(object):
             gc.collect()
 
     def data_write(self):
+        np.save(os.path.join(self.__output_path, "train_init_score.npy"), self.__val_preds)
+        np.save(os.path.join(self.__output_path, "test_init_score.npy"), self.__sub_preds)
+
         self.__test_index["target"] = expit(self.__sub_preds.reshape((-1,)))
         self.__test_index.to_csv(os.path.join(self.__output_path, "sample_submission.csv"), index=False)
 

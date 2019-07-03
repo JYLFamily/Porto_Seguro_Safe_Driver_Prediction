@@ -4,7 +4,7 @@ import numpy as np
 from keras.models import Model
 from scipy.special import logit
 from tensorflow import set_random_seed
-from keras.initializers import random_uniform, lecun_normal, constant
+from keras.initializers import truncated_normal, lecun_normal, constant
 from keras.layers import Input, Embedding, Reshape, Dropout, Concatenate, Dense
 np.random.seed(7)
 set_random_seed(7)
@@ -31,7 +31,7 @@ def network(categorical_columns_item, num_deep_numeric_feature, num_wide_numeric
         embedding_layer = Embedding(
             input_dim=num,
             output_dim=min(10, num // 2),
-            embeddings_initializer=random_uniform(minval=-1, maxval=1),
+            embeddings_initializer=truncated_normal(mean=0, stddev=1/np.sqrt(num)),
             input_length=1,
             name=col + "_deep_embedding")(input_deep_cat_layer)
         embedding_layer = (
