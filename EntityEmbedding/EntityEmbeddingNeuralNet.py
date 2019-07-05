@@ -9,7 +9,7 @@ import tensorflow as tf
 import keras.backend as k
 from tqdm import tqdm
 from tensorflow import set_random_seed
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from scipy.special import expit, logit
 from keras.callbacks import EarlyStopping
@@ -31,14 +31,14 @@ class EntityEmbeddingNeuralNet(object):
     def __init__(self, *, input_path, output_path):
         self.__input_path, self.__output_path = input_path, output_path
 
-        # data prepare
+        # prepare
         self.__train, self.__test = [None for _ in range(2)]
         self.__train_feature, self.__train_label = [None for _ in range(2)]
         self.__test_feature, self.__test_index = [None for _ in range(2)]
 
         self.__numeric_columns = list()
         self.__categorical_columns = list()
-        self.__categorical_columns_item = dict()  # each fold clear
+        self.__categorical_columns_counts = dict()  # each fold clear
 
         # model fit predict
         self.__folds = None
@@ -91,23 +91,6 @@ class EntityEmbeddingNeuralNet(object):
         self.__numeric_columns = [col for col in self.__train_feature.columns if not col.endswith(("_bin", "_cat"))]
         self.__categorical_columns = [col for col in self.__train_feature.columns if col.endswith(("_bin", "_cat"))]
 
-        # deep feature
-
-        # wide feature
-        # from EntityEmbedding.EntityEmbeddingTree import EntityEmbeddingTree
-        # eet = EntityEmbeddingTree(
-        #     numeric_columns=self.__numeric_columns,
-        #     categorical_columns=self.__categorical_columns
-        # )
-        # eet.fit(self.__train_feature, self.__train_label)
-        #
-        # from category_encoders import BinaryEncoder
-        # encoder = BinaryEncoder()  # binary encoder need pandas dataframe input type str
-        # self.__train_wide_feature = encoder.fit_transform(eet.transform(self.__train_feature))
-        # self.__test_wide_feature = encoder.transform(eet.transform(self.__test_feature))
-        # del self.__train_feature, self.__test_feature
-        # gc.collect()
-
     def model_fit_predict(self):
         # blending
         self.__folds = StratifiedKFold(n_splits=10, shuffle=True, random_state=7)
@@ -124,7 +107,7 @@ class EntityEmbeddingNeuralNet(object):
             trn_y = self.__train_label.iloc[trn_idx].copy(deep=True)
             val_y = self.__train_label.iloc[val_idx].copy(deep=True)
 
-            # deep feature categorical
+            # categorical feature
             for col in tqdm(self.__categorical_columns):
                 num_unique = trn_x[col].nunique()
 
@@ -164,63 +147,35 @@ class EntityEmbeddingNeuralNet(object):
                     val_x[col] = encoder.transform(val_x[col])
                     tes_x[col] = encoder.transform(tes_x[col])
 
-                    self.__categorical_columns_item[col] = len(encoder.classes_)
+                    self.__categorical_columns_counts[col] = len(encoder.classes_)
 
-            # deep feature
-            trn_deep_x = trn_x.copy(deep=True)
-            val_deep_x = val_x.copy(deep=True)
-            tes_deep_x = tes_x.copy(deep=True)
-
+            # numeric feature
             scaler = StandardScaler()  # calc std, mean skip np.nan
-            scaler.fit(trn_deep_x[self.__numeric_columns])
-            trn_deep_x[self.__numeric_columns] = scaler.transform(trn_deep_x[self.__numeric_columns])
-            val_deep_x[self.__numeric_columns] = scaler.transform(val_deep_x[self.__numeric_columns])
-            tes_deep_x[self.__numeric_columns] = scaler.transform(tes_deep_x[self.__numeric_columns])
+            scaler.fit(trn_x[self.__numeric_columns])
+            trn_x[self.__numeric_columns] = scaler.transform(trn_x[self.__numeric_columns])
+            val_x[self.__numeric_columns] = scaler.transform(val_x[self.__numeric_columns])
+            tes_x[self.__numeric_columns] = scaler.transform(tes_x[self.__numeric_columns])
 
-            trn_deep_x[self.__numeric_columns] = trn_deep_x[self.__numeric_columns].fillna(0.)
-            val_deep_x[self.__numeric_columns] = val_deep_x[self.__numeric_columns].fillna(0.)
-            tes_deep_x[self.__numeric_columns] = tes_deep_x[self.__numeric_columns].fillna(0.)
-
-            # wide feature
-            wide_feature = [col for col in self.__categorical_columns_item.keys() if not col.endswith("_num_cat")]
-            trn_wide_x = trn_x[wide_feature].copy(deep=True)
-            val_wide_x = val_x[wide_feature].copy(deep=True)
-            tes_wide_x = tes_x[wide_feature].copy(deep=True)
-
-            encoder = OneHotEncoder(categories="auto", sparse=False)
-            encoder.fit(trn_wide_x)
-            trn_wide_x = encoder.transform(trn_wide_x)
-            val_wide_x = encoder.transform(val_wide_x)
-            tes_wide_x = encoder.transform(tes_wide_x)
-
-            del trn_x, val_x, tes_x
-            gc.collect()
+            trn_x[self.__numeric_columns] = trn_x[self.__numeric_columns].fillna(0.)
+            val_x[self.__numeric_columns] = val_x[self.__numeric_columns].fillna(0.)
+            tes_x[self.__numeric_columns] = tes_x[self.__numeric_columns].fillna(0.)
 
             trn_feature_for_model = []
             val_feature_for_model = []
             tes_feature_for_model = []
 
-            for col in self.__categorical_columns_item.keys():
-                trn_feature_for_model.append(trn_deep_x[col].values)
-                val_feature_for_model.append(val_deep_x[col].values)
-                tes_feature_for_model.append(tes_deep_x[col].values)
+            for col in self.__categorical_columns_counts.keys():
+                trn_feature_for_model.append(trn_x[col].values)
+                val_feature_for_model.append(val_x[col].values)
+                tes_feature_for_model.append(tes_x[col].values)
 
-            trn_feature_for_model.append(trn_deep_x[self.__numeric_columns].values)
-            val_feature_for_model.append(val_deep_x[self.__numeric_columns].values)
-            tes_feature_for_model.append(tes_deep_x[self.__numeric_columns].values)
-
-            # trn_feature_for_model.append(trn_wide_x.values)
-            # val_feature_for_model.append(val_wide_x.values)
-            # tes_feature_for_model.append(tes_wide_x.values)
-
-            trn_feature_for_model.append(trn_wide_x)
-            val_feature_for_model.append(val_wide_x)
-            tes_feature_for_model.append(tes_wide_x)
+            trn_feature_for_model.append(trn_x[self.__numeric_columns].values)
+            val_feature_for_model.append(val_x[self.__numeric_columns].values)
+            tes_feature_for_model.append(tes_x[self.__numeric_columns].values)
 
             self.__net = network(
-                categorical_columns_item=self.__categorical_columns_item,
-                num_deep_numeric_feature=len(self.__numeric_columns),
-                num_wide_numeric_feature=trn_wide_x.shape[1],
+                col_num_categorical_feature=self.__categorical_columns_counts,
+                num_numeric_feature=len(self.__numeric_columns),
                 bias=trn_y.mean()
             )
             self.__net.compile(loss="binary_crossentropy", optimizer=Adam(0.0001), metrics=[roc_auc_score])
@@ -228,13 +183,12 @@ class EntityEmbeddingNeuralNet(object):
             self.__net.fit(
                 x=trn_feature_for_model,
                 y=trn_y.values,
-                epochs=50,
+                epochs=75,
                 batch_size=256,
                 verbose=2,
                 callbacks=[
                     EarlyStopping(
                         patience=10,
-                        min_delta=1e-4,
                         restore_best_weights=True
                     )],
                 validation_data=(val_feature_for_model, val_y.values)
@@ -255,8 +209,8 @@ class EntityEmbeddingNeuralNet(object):
             pred_test = self.__net.predict(tes_feature_for_model).reshape((-1,))
             self.__sub_preds += logit(pred_test) / self.__folds.n_splits
 
-            self.__categorical_columns_item.clear()
-            del trn_wide_x, val_wide_x, tes_wide_x, trn_deep_x, val_deep_x, tes_deep_x
+            self.__categorical_columns_counts.clear()
+            del trn_x, val_x, tes_x, trn_y, val_y
             gc.collect()
 
     def data_write(self):
