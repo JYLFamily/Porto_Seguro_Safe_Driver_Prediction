@@ -1,13 +1,13 @@
 # coding:utf-8
 
 import numpy as np
-import tensorflow as tf
 from keras.models import Model
 from scipy.special import logit
+from tensorflow import set_random_seed
 from keras.initializers import truncated_normal, lecun_normal, constant
 from keras.layers import Input, Embedding, Reshape, Dropout, Concatenate, Dense
 np.random.seed(7)
-tf.random.set_seed(7)
+set_random_seed(7)
 
 
 def gini(y_true, y_pred):

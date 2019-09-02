@@ -2,12 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="37ad1d08-f23f-4ebc-9dc6-e730fdf04592" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/EntityEmbeddingNeuralNet.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/EntityEmbeddingTree.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/NeuralNetUtil.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/TreeUtil.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/WideAndDeep/config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DeepAndCross/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DeepCrossing/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" beforeDir="false" afterPath="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" beforeDir="false" afterPath="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/WideAndDeep/__init__.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,8 +25,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="200" column="22" selection-start-line="200" selection-start-column="22" selection-end-line="200" selection-end-column="22" />
+            <state relative-caret-position="270">
+              <caret line="32" lean-forward="true" selection-start-line="32" selection-end-line="32" />
               <folding>
                 <element signature="e#16#25#0" expanded="true" />
               </folding>
@@ -33,13 +35,43 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/WideAndDeep/EntityEmbeddingNeuralNet.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="3355">
+              <caret line="213" column="42" lean-forward="true" selection-start-line="213" selection-start-column="42" selection-end-line="213" selection-end-column="42" />
+              <folding>
+                <element signature="e#16#25#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WideAndDeep/NeuralNetUtil.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="23">
+              <caret line="28" column="44" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="44" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="297">
+            <state relative-caret-position="-1273">
               <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
               <folding>
                 <element signature="e#16#34#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/WideAndDeep/EntityEmbeddingTree.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="432">
+              <caret line="26" column="21" selection-start-line="26" selection-start-column="21" selection-end-line="26" selection-end-column="21" />
             </state>
           </provider>
         </entry>
@@ -109,16 +141,18 @@
         <option value="E:/ProgramFiles/Anaconda3/Lib/site-packages/keras_lr_finder/lr_finder.py" />
         <option value="$PROJECT_DIR$/LearningRateFinder/LearningRateFinder.py" />
         <option value="$PROJECT_DIR$/EntityEmbedding/config.yaml" />
-        <option value="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" />
         <option value="$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py" />
+        <option value="$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py" />
+        <option value="$PROJECT_DIR$/WideAndDeep/NeuralNetUtil.py" />
+        <option value="$PROJECT_DIR$/WideAndDeep/EntityEmbeddingNeuralNet.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="736" />
-    <option name="y" value="124" />
+    <option name="x" value="968" />
+    <option name="y" value="224" />
     <option name="width" value="974" />
-    <option name="height" value="1047" />
+    <option name="height" value="886" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -131,6 +165,16 @@
             <path>
               <item name="Porto_Seguro_Safe_Driver_Prediction" type="b2602c69:ProjectViewProjectNode" />
               <item name="Porto_Seguro_Safe_Driver_Prediction" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Porto_Seguro_Safe_Driver_Prediction" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Porto_Seguro_Safe_Driver_Prediction" type="462c0819:PsiDirectoryNode" />
+              <item name="EntityEmbedding" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Porto_Seguro_Safe_Driver_Prediction" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Porto_Seguro_Safe_Driver_Prediction" type="462c0819:PsiDirectoryNode" />
+              <item name="WideAndDeep" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -294,7 +338,14 @@
       <option name="project" value="LOCAL" />
       <updated>1562321709920</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="clean code">
+      <created>1567389075606</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1567389075606</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TodoView">
@@ -308,7 +359,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4946581" visible="true" weight="0.15068494" />
       <window_info id="Structure" order="1" sideWeight="0.5074074" side_tool="true" weight="0.22971492" />
@@ -352,11 +402,10 @@
     <MESSAGE value="UPDATE BLENDING" />
     <MESSAGE value="Change Embedding Init Method" />
     <MESSAGE value="FIX BUG" />
-    <option name="LAST_COMMIT_MESSAGE" value="FIX BUG" />
+    <MESSAGE value="clean code" />
+    <option name="LAST_COMMIT_MESSAGE" value="clean code" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/bayes_opt/bayesian_optimization.py" />
-    <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/xgboost/sklearn.py" />
     <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/sklearn/ensemble/__init__.py" />
     <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/sklearn/ensemble/gradient_boosting.py" />
     <entry file="file://E:/ProgramFiles/Anaconda3/Lib/site-packages/sklearn/model_selection/_validation.py" />
@@ -446,13 +495,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/WideAndDeep/NeuralNetUtil.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="486">
-          <caret line="50" column="40" selection-start-line="50" selection-start-column="40" selection-end-line="50" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://D:/SoftWare/Anaconda3/Lib/site-packages/keras/backend/common.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="459">
@@ -493,8 +535,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/EntityEmbedding/EntityEmbeddingNeuralNet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="200" column="22" selection-start-line="200" selection-start-column="22" selection-end-line="200" selection-end-column="22" />
+        <state relative-caret-position="270">
+          <caret line="32" lean-forward="true" selection-start-line="32" selection-end-line="32" />
           <folding>
             <element signature="e#16#25#0" expanded="true" />
           </folding>
@@ -503,10 +545,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/EntityEmbedding/NeuralNetUtil.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="297">
+        <state relative-caret-position="-1273">
           <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
           <folding>
             <element signature="e#16#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WideAndDeep/NeuralNetUtil.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="23">
+          <caret line="28" column="44" selection-start-line="28" selection-start-column="20" selection-end-line="28" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WideAndDeep/EntityEmbeddingTree.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="26" column="21" selection-start-line="26" selection-start-column="21" selection-end-line="26" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/WideAndDeep/EntityEmbeddingNeuralNet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3355">
+          <caret line="213" column="42" lean-forward="true" selection-start-line="213" selection-start-column="42" selection-end-line="213" selection-end-column="42" />
+          <folding>
+            <element signature="e#16#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
