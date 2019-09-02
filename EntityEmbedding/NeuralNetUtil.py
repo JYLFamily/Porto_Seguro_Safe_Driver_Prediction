@@ -1,13 +1,13 @@
 # coding:utf-8
 
 import numpy as np
+import tensorflow as tf
 from keras.models import Model
 from scipy.special import logit
-from tensorflow import set_random_seed
 from keras.initializers import truncated_normal, lecun_normal, constant
 from keras.layers import Input, Embedding, Reshape, Dropout, Concatenate, Dense
 np.random.seed(7)
-set_random_seed(7)
+tf.random.set_seed(7)
 
 
 def gini(y_true, y_pred):
@@ -19,6 +19,26 @@ def gini(y_true, y_pred):
 
 def gini_normalized(y_true, y_pred):
     return gini(y_true, y_pred) / gini(y_true, y_true)
+
+
+def rank_gauss(trn_feature, val_feature, tes_feature, numeric_feature):
+    from scipy.special import erfinv
+    from scipy.stats import rankdata
+    from sklearn.preprocessing import minmax_scale
+
+    trn_feature[numeric_feature] = trn_feature[numeric_feature].fillna(trn_feature[numeric_feature].mean())
+    val_feature[numeric_feature] = val_feature[numeric_feature].fillna(trn_feature[numeric_feature].mean())
+    tes_feature[numeric_feature] = tes_feature[numeric_feature].fillna(trn_feature[numeric_feature].mean())
+
+    for col in numeric_feature:
+        ranked = rankdata(trn_feature[col].tolist() + val_feature[col].tolist() + tes_feature[col].tolist())
+        scaled = erfinv(minmax_scale(ranked, feature_range=(-0.999999, 0.999999)))
+
+        trn_feature[col] = scaled[:trn_feature.shape[0]]
+        val_feature[col] = scaled[trn_feature.shape[0]:trn_feature.shape[0] + val_feature.shape[0]]
+        tes_feature[col] = scaled[trn_feature.shape[0] + val_feature.shape[0]:]
+
+    return trn_feature, val_feature, tes_feature
 
 
 def network(col_num_categorical_feature, num_numeric_feature, bias):

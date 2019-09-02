@@ -14,7 +14,7 @@ from sklearn.model_selection import StratifiedKFold
 from scipy.special import expit, logit
 from keras.callbacks import EarlyStopping
 from keras.optimizers import Adam
-from EntityEmbedding.NeuralNetUtil import network, network_preformance
+from EntityEmbedding.NeuralNetUtil import rank_gauss, network, network_preformance
 np.random.seed(7)
 set_random_seed(7)
 pd.set_option("display.max_row", None)
@@ -150,15 +150,16 @@ class EntityEmbeddingNeuralNet(object):
                     self.__categorical_columns_counts[col] = len(encoder.classes_)
 
             # numeric feature
-            scaler = StandardScaler()  # calc std, mean skip np.nan
-            scaler.fit(trn_x[self.__numeric_columns])
-            trn_x[self.__numeric_columns] = scaler.transform(trn_x[self.__numeric_columns])
-            val_x[self.__numeric_columns] = scaler.transform(val_x[self.__numeric_columns])
-            tes_x[self.__numeric_columns] = scaler.transform(tes_x[self.__numeric_columns])
-
-            trn_x[self.__numeric_columns] = trn_x[self.__numeric_columns].fillna(0.)
-            val_x[self.__numeric_columns] = val_x[self.__numeric_columns].fillna(0.)
-            tes_x[self.__numeric_columns] = tes_x[self.__numeric_columns].fillna(0.)
+            # scaler = StandardScaler()  # calc std, mean skip np.nan
+            # scaler.fit(trn_x[self.__numeric_columns])
+            # trn_x[self.__numeric_columns] = scaler.transform(trn_x[self.__numeric_columns])
+            # val_x[self.__numeric_columns] = scaler.transform(val_x[self.__numeric_columns])
+            # tes_x[self.__numeric_columns] = scaler.transform(tes_x[self.__numeric_columns])
+            #
+            # trn_x[self.__numeric_columns] = trn_x[self.__numeric_columns].fillna(0.)
+            # val_x[self.__numeric_columns] = val_x[self.__numeric_columns].fillna(0.)
+            # tes_x[self.__numeric_columns] = tes_x[self.__numeric_columns].fillna(0.)
+            trn_x, val_x, tes_x = rank_gauss(trn_x, val_x, tes_x, self.__numeric_columns)
 
             trn_feature_for_model = []
             val_feature_for_model = []
@@ -184,11 +185,11 @@ class EntityEmbeddingNeuralNet(object):
                 x=trn_feature_for_model,
                 y=trn_y.values,
                 epochs=75,
-                batch_size=256,
+                batch_size=512,
                 verbose=2,
                 callbacks=[
                     EarlyStopping(
-                        patience=10,
+                        patience=5,
                         restore_best_weights=True
                     )],
                 validation_data=(val_feature_for_model, val_y.values)
